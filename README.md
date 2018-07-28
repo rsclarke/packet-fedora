@@ -1,4 +1,4 @@
-#Packet-Fedora
+# Packet-Fedora
 
 Create Fedora artifacts for Packet.net custom image.
 
