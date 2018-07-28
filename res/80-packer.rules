@@ -1,0 +1,26 @@
+/*
+ * Allow users in the packer group to tar and cp files
+ * to maintian permissions
+*/
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" && subject.isInGroup("packer")){
+        prg = action.lookup("program");
+        if (prg === "/usr/bin/tar" || prg === "/usr/bin/cp"){
+            return polkit.Result.YES;
+        }
+    }
+});
+
+/*
+ * Allow users in the packer group to mount file systems
+ * this is necessary for the loop device
+*/
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount" ||
+         action.id == "org.freedesktop.udisks2.loop-delete-others" ||
+         action.id == "org.freedesktop.udisks2.loop-modify-others") &&
+        subject.isInGroup("packer")) {
+        return polkit.Result.YES;
+    }
+});

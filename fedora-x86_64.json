@@ -1,0 +1,45 @@
+{
+    "builders": [
+        {
+            "type": "qemu",
+            "headless": false,
+            "qemuargs": [
+                [ "-m", "2048M" ]
+            ],
+            "iso_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/28/Server/x86_64/iso/Fedora-Server-netinst-x86_64-28-1.1.iso",
+            "iso_checksum_url": "https://getfedora.org/static/checksums/Fedora-Server-28-1.1-x86_64-CHECKSUM",
+            "iso_checksum_type": "sha256",
+            "output_directory": "output",
+            "format": "raw",
+            "disk_size": 40000,
+            "disk_interface": "virtio",
+            "net_device": "virtio-net",
+            "http_directory": "http",
+            "http_port_min": 10082,
+            "http_port_max": 10089,
+            "ssh_host_port_min": 2222,
+            "ssh_host_port_max": 2229,
+            "ssh_username": "provisoner",
+            "ssh_agent_auth": true,
+            "ssh_port": 22,
+            "ssh_timeout": "40m",
+            "vm_name": "fedora",
+            "boot_wait": "2s",
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora-ks.cfg<enter><wait>"
+            ]
+        }
+    ],
+    "provisioners":[
+        {
+            "type": "shell",
+            "inline": ["sudo systemctl poweroff"]
+        }
+    ],
+    "post-processors":[
+        {
+            "type": "shell-local",
+            "script": "scripts/packet-post-processor.sh"
+        }
+    ]
+}
