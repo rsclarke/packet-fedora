@@ -1,4 +1,9 @@
 {
+    "variables": {
+        "version": "30",
+        "arch": "x86_64",
+        "release": "1.2"
+    },
     "builders": [
         {
             "type": "qemu",
@@ -6,8 +11,8 @@
             "qemuargs": [
                 [ "-m", "2048M" ]
             ],
-            "iso_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/28/Server/x86_64/iso/Fedora-Server-netinst-x86_64-28-1.1.iso",
-            "iso_checksum_url": "https://getfedora.org/static/checksums/Fedora-Server-28-1.1-x86_64-CHECKSUM",
+            "iso_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-netinst-{{user `arch`}}-{{user `version`}}-{{user `release`}}.iso",
+            "iso_checksum_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-{{user `version`}}-{{user `release`}}-{{user `arch`}}-CHECKSUM",
             "iso_checksum_type": "sha256",
             "output_directory": "output",
             "format": "raw",
