@@ -30,7 +30,7 @@
             "ssh_port": 22,
             "ssh_timeout": "10m",
             "shutdown_command": "sudo systemctl poweroff",
-            "vm_name": "fedora",
+            "vm_name": "fedora.raw",
             "boot_wait": "2s",
             "boot_command": [
                 "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora-ks.cfg<enter><wait>"
@@ -38,6 +38,10 @@
         }
     ],
     "post-processors":[
+        {
+            "type": "shell-local",
+            "command": "virt-sysprep --format=raw -a output/fedora.raw"
+        },
         {
             "type": "shell-local",
             "script": "scripts/packet-post-processor.sh"

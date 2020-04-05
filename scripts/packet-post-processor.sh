@@ -3,7 +3,7 @@
 set -euxo pipefail
 
 cd output
-rawfile=fedora
+rawfile=fedora.raw
 
 startsector=$(fdisk -l "$rawfile" | sed -n "/$rawfile/"' s|.*\*\s*\([0-9]\+\).*|\1|p')
 sectorsize=$(fdisk -l "$rawfile" | sed -n '/^Units:/ s|.*= \([0-9]\+\).*|\1|p')
