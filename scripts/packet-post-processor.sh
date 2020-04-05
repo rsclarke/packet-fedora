@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euxo pipefail
+
 cd output
 rawfile=fedora
 

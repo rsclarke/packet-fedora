@@ -1,44 +1,40 @@
 {
     "variables": {
-        "version": "30",
+        "version": "31",
         "arch": "x86_64",
-        "release": "1.2"
+        "release": "1.9"
     },
     "builders": [
         {
             "type": "qemu",
             "headless": false,
-            "qemuargs": [
-                [ "-m", "2048M" ]
-            ],
+            "qemu_binary": "qemu-system-{{user `arch`}}",
+            "memory": 2048,
+            "cpus": 2,
             "iso_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-netinst-{{user `arch`}}-{{user `version`}}-{{user `release`}}.iso",
             "iso_checksum_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-{{user `version`}}-{{user `release`}}-{{user `arch`}}-CHECKSUM",
             "iso_checksum_type": "sha256",
             "output_directory": "output",
             "format": "raw",
-            "disk_size": 40000,
+            "disk_size": "4G",
             "disk_interface": "virtio",
             "net_device": "virtio-net",
             "http_directory": "http",
             "http_port_min": 10082,
             "http_port_max": 10089,
+            "communicator": "ssh",
             "ssh_host_port_min": 2222,
             "ssh_host_port_max": 2229,
-            "ssh_username": "provisoner",
+            "ssh_username": "provisioner",
             "ssh_agent_auth": true,
             "ssh_port": 22,
-            "ssh_timeout": "40m",
+            "ssh_timeout": "10m",
+            "shutdown_command": "sudo systemctl poweroff",
             "vm_name": "fedora",
             "boot_wait": "2s",
             "boot_command": [
                 "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora-ks.cfg<enter><wait>"
             ]
-        }
-    ],
-    "provisioners":[
-        {
-            "type": "shell",
-            "inline": ["sudo systemctl poweroff"]
         }
     ],
     "post-processors":[
