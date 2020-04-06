@@ -1,45 +1,55 @@
 #!/bin/bash
 
-set -euxo pipefail
+# Script from and modified to support guestmount
+# https://github.com/packethost/packet-images/blob/master/tools/archive-centos
 
-cd output
-rawfile=fedora.raw
+# ./packet-post-processor ./output/fedora.[qcow2|raw] ./output
 
-startsector=$(fdisk -l "$rawfile" | sed -n "/$rawfile/"' s|.*\*\s*\([0-9]\+\).*|\1|p')
-sectorsize=$(fdisk -l "$rawfile" | sed -n '/^Units:/ s|.*= \([0-9]\+\).*|\1|p')
-offset=$((startsector * sectorsize))
+set -euo pipefail
 
-echo "Mounting raw image"
-LOOPDEV=$(udisksctl loop-setup --no-user-interaction -o $offset -r -f $rawfile | cut -d' ' -f5 | tr -d .)
-FEDROOT=/run/media/$USER/fedroot
+IMAGE=$1
+OUTDIR=$2
 
-echo -n "Creating rootfs archive "
-pkexec tar -czf `pwd`/rootfs.tar.gz -C $FEDROOT . --totals --checkpoint=.1000
+IMAGETMP=/tmp/image-temp
+mkdir -p $IMAGETMP
 
-KERNEL=$(ls -al $FEDROOT/boot/vmlinuz-* | awk {'print $9'} | sort -V | grep -v rescue | head -1)
-INITRD=$(ls -al $FEDROOT/boot/initramfs* | awk {'print $9'} | sort -V | grep -v rescue | head -1)
-KERNELVER=$(echo $KERNEL | cut -d'-' -f2-)
-tmp=$(mktemp -d -t initrd4me-XXXXXXX)
-mkdir $tmp/boot
+echo "Mounting image at $IMAGETMP"
+guestmount -a $IMAGE -i --ro $IMAGETMP
+
+echo -n "Creating image archive "
+tar -czf $OUTDIR/image.tar.gz -C $IMAGETMP . --totals --checkpoint=.1000 --warning=no-file-ignored
+
+
+KERNEL=$(ls -al $IMAGETMP/boot/vmlinuz-* | awk {'print $9'} | sort -V | grep -v rescue | head -1)
+INITRD=$(ls -al $IMAGETMP/boot/initramfs* | awk {'print $9'} | sort -V | grep -v rescue | head -1)
+KERNELVER=$(echo $KERNEL | sed "s~$IMAGETMP\/boot\/vmlinuz-~~g")
 
 echo "Kernel file: $KERNEL"
 echo "Initrd file: $INITRD"
 echo "Kernel version: $KERNELVER"
 
-echo -n "Creating kernel archive "
-pkexec cp $KERNEL $tmp/boot/vmlinuz
-pkexec tar -czf `pwd`/kernel.tar.gz -C $tmp/boot ./vmlinuz --totals --checkpoint=.1000
+tmp=$(mktemp -d -t initrd4me-XXXXXXX)
+mkdir $tmp/boot
+mkdir -p $OUTDIR
 
-echo -n "Creaing initrd archive "
-pkexec cp $INITRD $tmp/boot/initrd
-pkexec tar -czf `pwd`/initrd.tar.gz -C $tmp/boot ./initrd --totals --checkpoint=.1000
+# shellcheck disable=SC2064
+trap "rm -rf $tmp; rm -rf $IMAGETMP" EXIT
+echo "Temp directory is: $tmp"
+echo "Archive dir is: $OUTDIR"
 
-echo -n "Creating modules archive "
-pkexec tar -czf `pwd`/modules.tar.gz $FEDROOT/lib/modules/$KERNELVER --totals --checkpoint=.1000
+echo -n "Archiving kernel "
+cp $KERNEL $tmp/boot
+mv $tmp/boot/vmlinuz-$KERNELVER $tmp/boot/vmlinuz
+tar -czf $OUTDIR/kernel.tar.gz -C $tmp/boot ./vmlinuz --totals --checkpoint=.1000
 
-echo "Unmounting raw image"
-udisksctl unmount --block-device $LOOPDEV
-#udisksctl loop-delete --block-device $LOOPDEV --no-user-interaction
+echo -n "Archiving initrd "
+cp $INITRD $tmp/boot
+mv $tmp/boot/initramfs-$KERNELVER.img $tmp/boot/initrd
+tar -czf $OUTDIR/initrd.tar.gz -C $tmp/boot ./initrd --totals --checkpoint=.1000
 
-echo "Cleanup"
-rm -rf $tmp
+echo -n "Archiving modules "
+tar -czf $OUTDIR/modules.tar.gz $IMAGETMP/lib/modules/$KERNELVER --totals --checkpoint=.1000 
+
+
+guestunmount $IMAGETMP
+rm -rf $IMAGETMP $tmp
