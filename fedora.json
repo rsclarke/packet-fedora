@@ -2,7 +2,9 @@
     "variables": {
         "version": "31",
         "arch": "x86_64",
-        "release": "1.9"
+        "release": "1.9",
+        "format": "qcow2",
+        "outdir": "output"
     },
     "builders": [
         {
@@ -14,8 +16,8 @@
             "iso_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-netinst-{{user `arch`}}-{{user `version`}}-{{user `release`}}.iso",
             "iso_checksum_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/{{user `version`}}/Server/{{user `arch`}}/iso/Fedora-Server-{{user `version`}}-{{user `release`}}-{{user `arch`}}-CHECKSUM",
             "iso_checksum_type": "sha256",
-            "output_directory": "output",
-            "format": "raw",
+            "output_directory": "{{user `outdir`}}",
+            "format": "{{user `format`}}",
             "disk_size": "4G",
             "disk_interface": "virtio",
             "net_device": "virtio-net",
@@ -30,7 +32,7 @@
             "ssh_port": 22,
             "ssh_timeout": "10m",
             "shutdown_command": "sudo systemctl poweroff",
-            "vm_name": "fedora.raw",
+            "vm_name": "fedora.{{user `format`}}",
             "boot_wait": "2s",
             "boot_command": [
                 "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora-ks.cfg<enter><wait>"
@@ -40,11 +42,11 @@
     "post-processors":[
         {
             "type": "shell-local",
-            "command": "virt-sysprep --format=raw -a output/fedora.raw"
+            "command": "virt-sysprep --format={{user `format`}} -a {{user `outdir`}}/fedora.{{user `format`}}"
         },
         {
             "type": "shell-local",
-            "script": "scripts/packet-post-processor.sh"
+            "command": "scripts/packet-post-processor.sh {{user `outdir`}}/fedora.{{user `format`}} {{user `outdir`}}"
         }
     ]
 }
